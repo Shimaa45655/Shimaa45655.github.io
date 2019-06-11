@@ -1,0 +1,277 @@
+/* Minification failed. Returning unminified contents.
+(143,11-12): run-time error JS1010: Expected identifier: .
+(143,11-12): run-time error JS1195: Expected expression: .
+ */
+Core.ProjectSpark = Object.create(Core);
+
+
+Core.ProjectSpark.Variables = {
+    IdSelectors: {
+        swiperContainerId: '#swipper-container-id',
+        bigYoutubeVideo: '#big-youtube-video',
+        wideYoutubeIframe: '#wide-youtube-video-iframe',
+        firstVideoIframe: '#youtube-video-1-iframe',
+        secondVideoIframe: '#youtube-video-2-iframe',
+        thirdVideoIframe: '#youtube-video-3-iframe',
+        firstVideoDiv: '#video-1-div',
+        secondVideoDiv: '#video-2-div',
+        thirdVideoDiv: '#video-3-div'
+    },
+    ClassSelectors: {
+        swiperParentContainer: '.midas-service-container',
+        swiperButtonNext: '.swiper-button-next',
+        swiperButtonPrev: '.swiper-button-prev',
+        servicesSwiperContainer: '.services-swiper-container'
+    },
+    wideVideoButton: 'wide-youtube-video-button',
+    firstVideoButton: 'youtube-video-1-button',
+    secondVideoButton: 'youtube-video-2-button',
+    thirdVideoButton: 'youtube-video-3-button'
+}
+
+
+Core.ProjectSpark.init = function () {
+    Core.ProjectSpark.createSwiper(Core.ProjectSpark.countSliders());
+}
+
+Core.ProjectSpark.createSwiper = function (numberSlides) {
+    var slidesPerView = numberSlides != 0 ? numberSlides : 4;
+    Core.ProjectSpark.Variables.ServicesSwiper = new Swiper(Core.ProjectSpark.Variables.ClassSelectors.servicesSwiperContainer, {
+        slidesPerView: slidesPerView,
+        spaceBetween: 20,
+        nextButton: Core.ProjectSpark.Variables.ClassSelectors.swiperButtonNext,
+        prevButton: Core.ProjectSpark.Variables.ClassSelectors.swiperButtonPrev,
+        breakpoints: {
+            320: {
+                slidesPerView: 1,
+                width: 310,
+                spaceBetween: 800
+            },
+            400: {
+                slidesPerView: 1,
+                width: 350,
+                spaceBetween: 800
+            },
+            450: {
+                slidesPerView: 1,
+                width: 400,
+                spaceBetween: 800
+            },
+            600: {
+                slidesPerView: 1,
+                width: 600,
+                spaceBetween: 800
+            },
+            640: {
+                slidesPerView: 1,
+                width: 350,
+                spaceBetween: 800
+            },
+            799: {
+                slidesPerView: 3,
+                width: 755,
+                spaceBetween: 20
+            }
+        }
+    });
+}
+
+Core.ProjectSpark.countSliders = function () {
+    var counter = 0;
+    $('#swipper-container-id .swiper-slide').each(function () {
+        counter++;
+    });
+    return counter;
+}
+
+Core.ProjectSpark.openProjectVideo = function (video) {
+    var variables = Core.ProjectSpark.Variables;
+    switch (video.id) {
+        case variables.wideVideoButton:
+            const Anthem = 'ET44KgYlfFc';
+            Core.ProjectSpark.handleYoutubeVideo(variables.IdSelectors.bigYoutubeVideo, variables.IdSelectors.wideYoutubeIframe, video, Anthem);
+            break;
+        case variables.firstVideoButton:
+            const Jasmine = 'WFC2KrjVdMs';
+            Core.ProjectSpark.handleYoutubeVideo(variables.IdSelectors.firstVideoIframe, variables.IdSelectors.firstVideoDiv, video, Jasmine);
+            break;
+        case variables.secondVideoButton:
+            const Dorsey = '2KKTFrpzS3Y';
+            Core.ProjectSpark.handleYoutubeVideo(variables.IdSelectors.secondVideoIframe, variables.IdSelectors.secondVideoDiv, video, Dorsey);
+            break;
+        case variables.thirdVideoButton:
+            const Tim = 'QXhVHcAytSU';
+            Core.ProjectSpark.handleYoutubeVideo(variables.IdSelectors.thirdVideoIframe, variables.IdSelectors.thirdVideoDiv, video, Tim);
+            break;
+    }
+}
+
+Core.ProjectSpark.handleYoutubeVideo = function (iframe, parentDiv, video, videoID) {
+    if ($(iframe).length) {
+        $(video).addClass('hide');
+        $(iframe).attr('src', 'https://www.youtube.com/embed/' + videoID + '?rel=0&autoplay=1&mute=0');
+        $(parentDiv).removeClass('hide');
+    }
+    else {
+        window.open('https://www.youtube.com/watch?v=' + videoID, '_blank');
+    }
+}
+
+$(window).on('changed.zf.mediaquery', function (event, newSize, oldSize) {
+    if (Core.ProjectSpark.Variables.ServicesSwiper !== undefined) {
+        if (Core.ProjectSpark.Variables.ServicesSwiper.destroy !== undefined && typeof Core.ProjectSpark.Variables.ServicesSwiper.destroy == 'function') {
+            Core.ProjectSpark.Variables.ServicesSwiper.destroy(true, true);
+        }
+        Core.ProjectSpark.createSwiper(Core.ProjectSpark.countSliders());
+    }
+});
+
+$(document).ready(function () {
+    Core.ProjectSpark.init();
+});
+
+
+
+;
+/**
+ * author Christopher Blum
+ *    - based on the idea of Remy Sharp, http://remysharp.com/2009/01/26/element-in-view-event-plugin/
+ *    - forked from http://github.com/zuk/jquery.inview/
+ */
+(function (factory) {
+  if (typeof define == 'function' && define.amd) {
+    // AMD
+    define(['jquery'], factory);
+  } else if (typeof exports === 'object') {
+    // Node, CommonJS
+    module.exports = factory(require('jquery'));
+  } else {
+      // Browser globals
+    factory(jQuery);
+  }
+}(function ($) {
+
+  var inviewObjects = [], viewportSize, viewportOffset,
+      d = document, w = window, documentElement = d.documentElement, timer;
+
+  $.event.special.inview = {
+    add: function(data) {
+      inviewObjects.push({ data: data, $element: $(this), element: this });
+      // Use setInterval in order to also make sure this captures elements within
+      // "overflow:scroll" elements or elements that appeared in the dom tree due to
+      // dom manipulation and reflow
+      // old: $(window).scroll(checkInView);
+      //
+      // By the way, iOS (iPad, iPhone, ...) seems to not execute, or at least delays
+      // intervals while the user scrolls. Therefore the inview event might fire a bit late there
+      //
+      // Don't waste cycles with an interval until we get at least one element that
+      // has bound to the inview event.
+      if (!timer && inviewObjects.length) {
+         timer = setInterval(checkInView, 250);
+      }
+    },
+
+    remove: function(data) {
+      for (var i=0; i<inviewObjects.length; i++) {
+        var inviewObject = inviewObjects[i];
+        if (inviewObject.element === this && inviewObject.data.guid === data.guid) {
+          inviewObjects.splice(i, 1);
+          break;
+        }
+      }
+
+      // Clear interval when we no longer have any elements listening
+      if (!inviewObjects.length) {
+         clearInterval(timer);
+         timer = null;
+      }
+    }
+  };
+
+  function getViewportSize() {
+    var mode, domObject, size = { height: w.innerHeight, width: w.innerWidth };
+
+    // if this is correct then return it. iPad has compat Mode, so will
+    // go into check clientHeight/clientWidth (which has the wrong value).
+    if (!size.height) {
+      mode = d.compatMode;
+      if (mode || !$.support.boxModel) { // IE, Gecko
+        domObject = mode === 'CSS1Compat' ?
+          documentElement : // Standards
+          d.body; // Quirks
+        size = {
+          height: domObject.clientHeight,
+          width:  domObject.clientWidth
+        };
+      }
+    }
+
+    return size;
+  }
+
+  function getViewportOffset() {
+    return {
+      top:  w.pageYOffset || documentElement.scrollTop   || d.body.scrollTop,
+      left: w.pageXOffset || documentElement.scrollLeft  || d.body.scrollLeft
+    };
+  }
+
+  function checkInView() {
+    if (!inviewObjects.length) {
+      return;
+    }
+
+    var i = 0, $elements = $.map(inviewObjects, function(inviewObject) {
+      var selector  = inviewObject.data.selector,
+          $element  = inviewObject.$element;
+      return selector ? $element.find(selector) : $element;
+    });
+
+    viewportSize   = viewportSize   || getViewportSize();
+    viewportOffset = viewportOffset || getViewportOffset();
+
+    for (; i<inviewObjects.length; i++) {
+      // Ignore elements that are not in the DOM tree
+      if (!$.contains(documentElement, $elements[i][0])) {
+        continue;
+      }
+
+      var $element      = $($elements[i]),
+          elementSize   = { height: $element[0].offsetHeight, width: $element[0].offsetWidth },
+          elementOffset = $element.offset(),
+          inView        = $element.data('inview');
+
+      // Don't ask me why because I haven't figured out yet:
+      // viewportOffset and viewportSize are sometimes suddenly null in Firefox 5.
+      // Even though it sounds weird:
+      // It seems that the execution of this function is interferred by the onresize/onscroll event
+      // where viewportOffset and viewportSize are unset
+      if (!viewportOffset || !viewportSize) {
+        return;
+      }
+
+      if (elementOffset.top + elementSize.height > viewportOffset.top &&
+          elementOffset.top < viewportOffset.top + viewportSize.height &&
+          elementOffset.left + elementSize.width > viewportOffset.left &&
+          elementOffset.left < viewportOffset.left + viewportSize.width) {
+        if (!inView) {
+          $element.data('inview', true).trigger('inview', [true]);
+        }
+      } else if (inView) {
+        $element.data('inview', false).trigger('inview', [false]);
+      }
+    }
+  }
+
+  $(w).on("scroll resize scrollstop", function() {
+    viewportSize = viewportOffset = null;
+  });
+
+  // IE < 9 scrolls to focused elements without firing the "scroll" event
+  if (!documentElement.addEventListener && documentElement.attachEvent) {
+    documentElement.attachEvent("onfocusin", function() {
+      viewportOffset = null;
+    });
+  }
+}));;
